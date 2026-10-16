@@ -10,6 +10,9 @@ User-facing docs live in README.md.
   F6 handling, auto-focus of the page on route change.
 - `frontend/a11y.ts`: the generic repair: finds clickable elements via React props, gives
   them role/tabindex/name, keyboard and screen reader activation.
+- `frontend/navmenus.ts`: a visually hidden "Меню: <tab>" button after each Store/Library/
+  Community/Profile tab that opens Steam's hover-only dropdown and focuses it (APG disclosure
+  navigation pattern: the tab itself still navigates).
 - `webview/preload.ts`: injected into Store/Community pages; F6 there calls
   `frontend.focusShell()`.
 - `backend/focus.lua`: native Win32 focus via LuaJIT `ffi` (Windows only).
@@ -45,6 +48,13 @@ User-facing docs live in README.md.
   `popup.window.SteamClient.Window.SetKeyFocus(true)` do NOT move Win32 focus in desktop
   mode. The backend does `AttachThreadInput` + `SetFocus` on the shell's
   `Chrome_WidgetWin_1` (largest visible `CefBrowserWindow` in the foreground `SDL_app`).
+- Dropdown menus (menu bar and tabs) are one component with props `{title, menuItems,
+  bSuperNavBehavior, ...}`; its wrapper div's `onMouseEnter` opens the menu. The menu object
+  sits in a `useRef` hook (has `Show`, `Hide`, `TakeFocus`, `BHasFocus`, `visible`).
+  `bSuperNavBehavior` (the tabs) means hover-only and `bNoFocusWhenShown`; calling
+  `TakeFocus()` afterwards moves focus into the menu like the menu bar's menus.
+- Some panels are hidden by collapsing to inline `height: 0; overflow: hidden` rather than
+  unmounting; `hideCollapsed` makes them inert.
 - Steam's own UI code is readable (minified) in `C:\Program Files (x86)\Steam\steamui\*.js`
   (mostly `sp.js`); localization strings in `steamui\localization\*_russian-json.js`.
 - F6 is only used by Steam's keyboard-as-gamepad mapping in Big Picture; free in desktop mode.
@@ -81,7 +91,8 @@ User-facing docs live in README.md.
 ## Open work
 
 - Unnamed: some Library sidebar icons, 41x41 buttons on game tiles.
-- Tabs (Store/Library/Community/Profile) should expose which one is active.
+- Tabs (Store/Library/Community/Profile) should expose which one is active
+  (`aria-current="page"`).
 - Announce status changes (downloads, update notices) via live regions.
 - Not yet examined: library game list, game page (Play button and its menus), context menu
   arrow-key navigation, Friends window, Settings window.

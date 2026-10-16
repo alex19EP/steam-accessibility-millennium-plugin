@@ -29,6 +29,12 @@ and icon-only buttons are silent.
   Help), tabs, notifications, account, Big Picture, minimize/maximize/close, back and
   forward. They get a role, a name and Tab focus, and work with Enter, Space and the screen
   reader's own activation.
+- **Opens the tab menus from the keyboard**: sighted users open the Store, Library,
+  Community and Profile menus (Wishlist, Downloads, Market, Activity, ...) by hovering over
+  the tab. After each tab there is now a "Menu: <tab>" button that opens the same menu and
+  moves focus into it. The tab itself still goes to its section.
+- **Hides collapsed notices**: panels Steam has closed, such as the client update bar in
+  the Library, are no longer read in browse mode or reached with Tab.
 - **Names icon-only buttons** from the tooltip text Steam shows sighted users, in Steam's
   own language.
 - **Reports disabled state**, for example "Forward, unavailable" when there is no page to
@@ -78,6 +84,7 @@ From source:
 - **F6**: move focus between the Steam window and the page it is showing.
 - **Tab / Shift+Tab**: move between the Steam window's buttons.
 - **Enter or Space**: activate the focused button.
+- **Enter on "Menu: Store"** (and the other tab menu buttons): open that tab's menu.
 
 ## Known limitations
 

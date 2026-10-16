@@ -9,6 +9,7 @@ import {
 	refreshDisabled,
 	updateCollapsed,
 } from './a11y';
+import { addMenuButtons } from './navmenus';
 
 // Steam's shell exposes these globals in the SharedJSContext the frontend runs in.
 const w = window as any;
@@ -69,6 +70,7 @@ function onKeyDown(e: KeyboardEvent) {
 function repair(name: string, doc: Document) {
 	const role = name.startsWith('contextmenu') ? 'menuitem' : 'button';
 	for (const c of findCandidates(doc)) applyFix(c, role);
+	addMenuButtons(doc);
 	nameUnlabeledControls(doc);
 	hideDecorativeImages(doc);
 	hideCollapsed(doc);

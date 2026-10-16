@@ -35,12 +35,12 @@ function reactKey(el: Element, prefix: string): string | undefined {
 	return Object.keys(el).find((k) => k.startsWith(prefix));
 }
 
-function reactProps(el: Element): any {
+export function reactProps(el: Element): any {
 	const k = reactKey(el, '__reactProps$');
 	return k ? (el as any)[k] : undefined;
 }
 
-function reactFiber(el: Element): any {
+export function reactFiber(el: Element): any {
 	const k = reactKey(el, '__reactFiber$');
 	return k ? (el as any)[k] : undefined;
 }
@@ -94,9 +94,10 @@ const OWN_STRINGS: Record<string, { ru: string; en: string }> = {
 	restore: { ru: 'Восстановить окно', en: 'Restore' },
 	scrollLeft: { ru: 'Прокрутить влево', en: 'Scroll left' },
 	scrollRight: { ru: 'Прокрутить вправо', en: 'Scroll right' },
+	menu: { ru: 'Меню', en: 'Menu' },
 };
 
-function ownString(key: keyof typeof OWN_STRINGS): string {
+export function ownString(key: keyof typeof OWN_STRINGS): string {
 	const locales: string[] = (window as any).LocalizationManager?.GetPreferredLocales?.() ?? [];
 	return locales[0]?.startsWith('ru') ? OWN_STRINGS[key].ru : OWN_STRINGS[key].en;
 }
