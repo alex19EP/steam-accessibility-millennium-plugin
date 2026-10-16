@@ -2,10 +2,12 @@ import { definePlugin, Field } from 'millennium';
 import {
 	applyFix,
 	findCandidates,
+	hideCollapsed,
 	hideDecorativeImages,
 	installActivation,
 	nameUnlabeledControls,
 	refreshDisabled,
+	updateCollapsed,
 } from './a11y';
 
 // Steam's shell exposes these globals in the SharedJSContext the frontend runs in.
@@ -69,6 +71,7 @@ function repair(name: string, doc: Document) {
 	for (const c of findCandidates(doc)) applyFix(c, role);
 	nameUnlabeledControls(doc);
 	hideDecorativeImages(doc);
+	hideCollapsed(doc);
 	refreshDisabled(doc);
 }
 
@@ -89,6 +92,10 @@ function attachPopup(popup: any) {
 		}, 250);
 	};
 	new MutationObserver(schedule).observe(doc, { childList: true, subtree: true });
+	// Panels open and collapse by changing only their inline style; handle that right away.
+	new MutationObserver((records) => {
+		for (const r of records) updateCollapsed(r.target as HTMLElement);
+	}).observe(doc, { attributes: true, attributeFilter: ['style'], subtree: true });
 	schedule();
 }
 

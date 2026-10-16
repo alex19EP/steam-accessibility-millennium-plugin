@@ -214,6 +214,35 @@ export function hideDecorativeImages(doc: Document) {
 	}
 }
 
+const COLLAPSED = 'data-a11y-collapsed';
+
+/**
+ * Steam hides some panels by collapsing them to `height: 0; overflow: hidden` instead of
+ * unmounting them (e.g. the client update and beta notices at the bottom of the Library).
+ * Sighted users see nothing, but the text and buttons stay in the screen reader's tree and
+ * the tab order, so make them inert while collapsed.
+ */
+function isCollapsed(el: HTMLElement): boolean {
+	const s = el.style;
+	return s.overflow === 'hidden' && (parseFloat(s.height) === 0 || parseFloat(s.width) === 0);
+}
+
+export function updateCollapsed(el: HTMLElement) {
+	if (isCollapsed(el)) {
+		if (el.hasAttribute('inert')) return;
+		el.setAttribute('inert', '');
+		el.setAttribute(COLLAPSED, '');
+	} else if (el.hasAttribute(COLLAPSED)) {
+		// Only undo our own inert, never Steam's.
+		el.removeAttribute('inert');
+		el.removeAttribute(COLLAPSED);
+	}
+}
+
+export function hideCollapsed(doc: Document) {
+	for (const el of doc.querySelectorAll<HTMLElement>(`[style],[${COLLAPSED}]`)) updateCollapsed(el);
+}
+
 /** Make an element behave like a click for code that listens to mouse down/up. */
 function pointerClick(el: HTMLElement) {
 	const r = el.getBoundingClientRect();
