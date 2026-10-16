@@ -1,0 +1,31 @@
+[plugin]
+id = "steam-accessibility"
+name = "Steam Accessibility"
+version = "0.1.0"
+author = "alex19EP"
+description = "Screen reader fixes for the Steam desktop client: F6 moves focus between the Steam window and the web page, and the window's menus and tabs get proper roles and names."
+
+[backend]
+entry = "backend/main.lua"
+sources = ["backend/**/*.lua"]
+
+[frontend]
+entry = "frontend/index.tsx"
+
+[webkit]
+entry = "webview/preload.ts"
+
+[compiler]
+output_path = "auto"
+
+# Do not use `bun run dev`: hot reloading leaves the plugin in a state where Millennium
+# considers it not running, which stalls store page loads. See CLAUDE.md.
+[dev]
+auto_restart = false
+reload_steamui_when = "never"
+
+[logger]
+padding = 0
+backend_prefix  = "BCK"
+frontend_prefix = "FRT"
+webview_prefix  = "WEB"
