@@ -16,7 +16,14 @@ unsigned long GetCurrentThreadId(void);
 int AttachThreadInput(unsigned long attach, unsigned long to, int doAttach);
 HWND SetFocus(HWND h);
 HWND GetForegroundWindow(void);
+int IsWindow(HWND h);
+int SetForegroundWindow(HWND h);
+void* OpenProcess(unsigned long access, int inherit, unsigned long pid);
+int QueryFullProcessImageNameW(void* process, unsigned long flags, uint16_t* name, unsigned long* size);
+int CloseHandle(void* h);
 ]]
+
+local PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 
 -- ffi.C on Windows resolves kernel32 and user32 exports.
 local C = ffi.C
@@ -77,5 +84,61 @@ function focusShellWindow()
 
     local result = string.format("attached=%s previous=%s", tostring(attached), tostring(previous))
     logger:info("focusShellWindow " .. result)
+    return result
+end
+
+-- The window that was in front (the game) when the accessible overlay opened.
+local saved_foreground = nil
+
+--- File name of the process that owns a window, lower case ("steamwebhelper.exe").
+local function process_name(h)
+    local pid = ffi.new("unsigned long[1]")
+    C.GetWindowThreadProcessId(h, pid)
+    local process = C.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid[0])
+    if process == nil then return "" end
+    local buf = ffi.new("uint16_t[260]")
+    local size = ffi.new("unsigned long[1]", 260)
+    local ok = C.QueryFullProcessImageNameW(process, 0, buf, size) ~= 0
+    C.CloseHandle(process)
+    if not ok then return "" end
+    local out = {}
+    for i = 0, size[0] - 1 do out[#out + 1] = string.char(buf[i] < 128 and buf[i] or 63) end
+    return (table.concat(out):match("[^\\]+$") or ""):lower()
+end
+
+---@ffi
+--- Remember the foreground window before the accessible overlay takes focus. The frontend
+--- calls this while none of the overlay's windows are shown, but does not wait for it, so by
+--- the time this runs an overlay window (a Steam window) may already be in front.
+---@return string
+function rememberForeground()
+    if jit.os ~= "Windows" then return "only implemented on Windows" end
+    local fg = C.GetForegroundWindow()
+    if fg == nil then return "no foreground window" end
+    local name = process_name(fg)
+    if name == "steamwebhelper.exe" then return "kept, Steam window in front" end
+    saved_foreground = fg
+    return "saved " .. class_of(fg) .. " of " .. name
+end
+
+---@ffi
+--- Give the foreground back to the remembered window. Hiding the focused overlay window
+--- leaves Windows' focus on it instead of the game.
+---@return string
+function restoreForeground()
+    if jit.os ~= "Windows" then return "only implemented on Windows" end
+    local target_window = saved_foreground
+    if target_window == nil or C.IsWindow(target_window) == 0 then return "nothing to restore" end
+
+    -- Windows only lets the foreground thread hand out the foreground; borrow its input state.
+    local fg = C.GetForegroundWindow()
+    local me = C.GetCurrentThreadId()
+    local target = fg ~= nil and C.GetWindowThreadProcessId(fg, nil) or 0
+    local attached = target ~= 0 and C.AttachThreadInput(me, target, 1) ~= 0
+    local ok = C.SetForegroundWindow(target_window) ~= 0
+    if attached then C.AttachThreadInput(me, target, 0) end
+
+    local result = string.format("attached=%s ok=%s", tostring(attached), tostring(ok))
+    logger:info("restoreForeground " .. result)
     return result
 end

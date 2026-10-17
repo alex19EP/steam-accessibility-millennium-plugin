@@ -47,6 +47,23 @@ and icon-only buttons are silent.
   go forward to.
 - **Silences decorative images** inside buttons that already have a name.
 
+### Experimental: accessible in-game overlay
+
+Steam's in-game overlay (Shift+Tab, or the key set in Steam's settings) is drawn inside the
+game window, so screen readers cannot read it. The setting **Accessible in-game overlay
+(experimental)**, in the plugin's settings under Millennium settings, opens the overlay's
+windows (friends list, achievements, guides, the web browser) as real windows instead:
+
+- the overlay key opens them and moves focus there; the overlay key or Alt+F4 closes them
+  and returns focus to the game;
+- F6 moves between the overlay's windows and into and out of a web page in them;
+- notifications the overlay shows are only spoken, focus stays in the game.
+
+It is off by default and only affects games started after it is turned on. It is not
+reliable yet: sometimes the overlay opens without anything being read, F6 can stop
+responding for half a minute, and when a game starts the screen reader may briefly say
+"SP Overlay". Turn it off again if it gets in the way.
+
 Nothing is matched by Steam's generated CSS class names, which change with every update.
 Controls are found by the click handlers React attaches to them, and named from the
 tooltips and labels Steam already passes to them.
@@ -124,7 +141,9 @@ does not match the version in `millennium.toml`.
 - A few icon buttons in the Library are still unnamed.
 - Status messages such as download progress are not announced when they change.
 - Notifications you turned off in Steam's settings (all of them, or while in game) are not
-  spoken either.
+  spoken either. In game, notifications are only spoken when the Steam overlay is enabled
+  for that game, because without it Steam drops them.
+- The accessible in-game overlay is experimental (see above).
 
 Bug reports from screen reader users are very welcome. Please mention your screen reader and
 Steam's interface language.

@@ -1,4 +1,5 @@
-import { definePlugin, Field } from 'millennium';
+import { definePlugin, Field, ToggleField } from 'millennium';
+import { useEffect, useState } from 'react';
 import {
 	applyFix,
 	findCandidates,
@@ -10,10 +11,26 @@ import {
 	updateCollapsed,
 } from './a11y';
 import { fixNavTabs, updateCurrentTab } from './navmenus';
+import { leaveOverlayPage, patchWindowOpen, setAccessibleOverlay, trackOverlayWindow } from './overlay';
 import { watchToasts } from './toasts';
 
 // Steam's shell exposes these globals in the SharedJSContext the frontend runs in.
 const w = window as any;
+
+// The `pluginConfig` imported from 'millennium' did not return stored values here, and changes
+// are not delivered to subscribers. The global API with the plugin name does work, so use that
+// and have the toggle update us directly.
+const PLUGIN = 'steam-accessibility';
+/** Plugin setting: open the in-game overlay's windows as real windows (see overlay.ts). */
+const ACCESSIBLE_OVERLAY = 'accessibleOverlay';
+
+function getSetting(key: string): Promise<unknown> {
+	return w.MILLENNIUM_API.pluginConfig.get(PLUGIN, key);
+}
+
+function setSetting(key: string, value: unknown): Promise<void> {
+	return w.MILLENNIUM_API.pluginConfig.set(PLUGIN, key, value);
+}
 
 function log(msg: string) {
 	console.log('[steam-a11y]', msg);
@@ -52,6 +69,7 @@ function focusPage() {
 
 /** @ffi */
 export function focusShell(): void {
+	if (leaveOverlayPage()) return;
 	getPageView()?.SetFocus(false);
 	// Steam's JS can't move Win32 focus out of a browser view in desktop mode,
 	// so the backend focuses the shell browser natively.
@@ -84,6 +102,8 @@ function attachPopup(popup: any) {
 	(win as any).__steamA11y = true;
 	const name = popupName(popup);
 	const doc = win.document;
+	patchWindowOpen(win);
+	trackOverlayWindow(name, win);
 	installActivation(doc);
 	watchToasts(doc, name);
 
@@ -116,7 +136,26 @@ function attachMain(popup: any) {
 	});
 }
 
+function loadSettings() {
+	getSetting(ACCESSIBLE_OVERLAY)
+		.then((on) => {
+			w.steamA11ySettingsRead = { [ACCESSIBLE_OVERLAY]: on };
+			setAccessibleOverlay(!!on);
+		})
+		.catch((e) => {
+			w.steamA11ySettingsRead = { error: String(e) };
+			log(`reading settings failed: ${String(e)}`);
+		});
+}
+
 function init() {
+	loadSettings();
+	// Reading the settings at load can come back empty. A game starts before its overlay
+	// windows are created, so read them again then.
+	w.SteamClient?.GameSessions?.RegisterForAppLifetimeNotifications?.((n: any) => {
+		if (n?.bRunning) loadSettings();
+	});
+	patchWindowOpen(window);
 	let mainAttached = false;
 	const tryMain = () => {
 		const popup = getMainPopup();
@@ -136,11 +175,33 @@ function init() {
 	});
 }
 
+function Settings() {
+	const [accessibleOverlay, setAccessibleOverlayState] = useState(false);
+	useEffect(() => {
+		getSetting(ACCESSIBLE_OVERLAY).then((on) => setAccessibleOverlayState(!!on));
+	}, []);
+	return (
+		<>
+			<Field label="F6 moves focus between the Steam window and the web page it shows." />
+			<ToggleField
+				label="Accessible in-game overlay (experimental)"
+				description="Opens the overlay's friends list and dialogs as real windows that screen readers can read. Takes effect for games started after the change."
+				checked={accessibleOverlay}
+				onChange={(on) => {
+					setAccessibleOverlayState(on);
+					setAccessibleOverlay(on);
+					setSetting(ACCESSIBLE_OVERLAY, on).catch((e) => log(`saving settings failed: ${String(e)}`));
+				}}
+			/>
+		</>
+	);
+}
+
 export default definePlugin(() => {
 	init();
 	return {
 		title: 'Steam Accessibility',
 		icon: <span />,
-		content: <Field label="F6 moves focus between the Steam window and the web page it shows." />,
+		content: <Settings />,
 	};
 });

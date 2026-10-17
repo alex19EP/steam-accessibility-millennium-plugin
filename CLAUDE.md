@@ -15,6 +15,8 @@ User-facing docs live in README.md.
   hover-only dropdown and focuses it (APG disclosure navigation pattern: the tab itself
   still navigates).
 - `frontend/toasts.ts`: speaks notification toasts through `backend.speak`.
+- `frontend/overlay.ts`: experimental accessible in-game overlay (plugin setting
+  `accessibleOverlay`, off by default; see "Overlay" under Open work).
 - `backend/speech.lua`: speech/braille through Prism (`resources/prism/prism.dll`, v0.18.3
   x64 from the official GitHub release, MPL-2.0; licenses next to it). Written to
   `%LOCALAPPDATA%\steam-accessibility\prism-<version>.dll` on first use and loaded via
@@ -127,7 +129,22 @@ User-facing docs live in README.md.
   "Disable toasts in game" should stay silent too.
 - Overlay: drawn inside the game window, so NVDA cannot read it. Its windows are ordinary
   popups in SharedJSContext (`desktopoverlay_uid<pid>`, `friendslist_uid<pid>`,
-  `GameOverview_..._uid<pid>`), so self-voicing it through Prism might be possible.
+  `GameOverview_..._uid<pid>`, `Achievements_...`, `OverlayBrowser_Guides_...`), created by
+  `window.open('about:blank?createflags=..&pid=<gameoverlayui pid>&browser=..', ...)`.
+  `overlay.ts` rewrites that URL to `browserType=4` (a real top-level window like the main
+  Steam window), shows/hides them following `SteamClient.Overlay.RegisterForOverlayActivated`
+  and `DesktopOverlay.m_mapWindowVisibilityState`, handles the overlay key, Alt+F4
+  (`SetOverlayState(gameid, 0)`) and F6, and gives the foreground back to the game through
+  `backend.rememberForeground`/`restoreForeground`. Debug log: `steamA11yOverlay()` in
+  SharedJSContext. Not reliable yet:
+  - backend calls sometimes take 30-45 s after a game starts (cause unknown, not Prism);
+    the frontend races `rememberForeground` against 100 ms, but F6 from a page
+    (preload → `frontend.focusShell`) goes through the same channel and stalls too;
+  - real windows ignore the Hidden/Minimized create flags, so each one appears once at
+    creation and is put away; NVDA briefly says "SP Overlay: <pid>/<browser>/0" at game start;
+  - windows missing from `m_mapWindowVisibilityState` count as wanted, so the overlay key
+    can show Guides/Achievements windows instead of the friends list;
+  - a window hidden while minimized can no longer be restored, hence `restored`.
 - Announce status changes (downloads, update notices) via live regions.
 - Not yet examined: library game list, game page (Play button and its menus), context menu
   arrow-key navigation, Friends window, Settings window.
@@ -135,7 +152,7 @@ User-facing docs live in README.md.
 
 ## Publishing
 
-- GitHub: `alex19EP/steam-accessibility-millennium-plugin` (planned), MIT.
+- GitHub: `alex19EP/steam-accessibility-millennium-plugin` (public), MIT.
 - Releases: pushing a `v<version>` tag runs `.github/workflows/release.yml` (windows-latest),
   which checks the tag against `millennium.toml`, runs `starlight pack --release -o dist`,
   and attaches the `.star` and a `.sha256` to a GitHub release. `--release` minifies the Lua
