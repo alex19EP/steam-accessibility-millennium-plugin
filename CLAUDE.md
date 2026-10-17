@@ -121,7 +121,13 @@ User-facing docs live in README.md.
 ## Open work
 
 - Unnamed: some Library sidebar icons, 41x41 buttons on game tiles.
-- Untested so far: toast speech in game (and with "disable toasts in game").
+- In game: while the game window is in front, Steam leaves toasts to the overlay
+  (popups `notificationtoasts_uid<appid>-<id>_uid<pid>`, spoken like desktop ones). With the
+  overlay disabled for the game, Steam clears the toast queue unshown, so nothing is spoken.
+  "Disable toasts in game" should stay silent too.
+- Overlay: drawn inside the game window, so NVDA cannot read it. Its windows are ordinary
+  popups in SharedJSContext (`desktopoverlay_uid<pid>`, `friendslist_uid<pid>`,
+  `GameOverview_..._uid<pid>`), so self-voicing it through Prism might be possible.
 - Announce status changes (downloads, update notices) via live regions.
 - Not yet examined: library game list, game page (Play button and its menus), context menu
   arrow-key navigation, Friends window, Settings window.
