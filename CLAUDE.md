@@ -136,6 +136,10 @@ User-facing docs live in README.md.
 ## Publishing
 
 - GitHub: `alex19EP/steam-accessibility-millennium-plugin` (planned), MIT.
+- Releases: pushing a `v<version>` tag runs `.github/workflows/release.yml` (windows-latest),
+  which checks the tag against `millennium.toml`, runs `starlight pack --release -o dist`,
+  and attaches the `.star` and a `.sha256` to a GitHub release. `--release` minifies the Lua
+  and JS; `bun run build` (what is tested in Steam day to day) does not.
 - Decision (2026-10-16): GitHub only for now; do not submit to the Millennium plugin
   database unless the author brings it up again.
 - If that changes, Millennium plugin database: PR adding a submodule to

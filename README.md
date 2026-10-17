@@ -75,15 +75,42 @@ To uninstall, close Steam and delete `wsock32.dll` and the `millennium` folder.
 
 ## Installing the plugin
 
-From source:
+The plugin is a single file, `steam-accessibility.star`. Nothing needs to be compiled.
+
+1. Close Steam completely.
+2. Download `steam-accessibility.star` from the latest
+   [release](https://github.com/alex19EP/steam-accessibility-millennium-plugin/releases/latest).
+3. Optionally, check its SHA-256 checksum against `steam-accessibility.star.sha256` in the
+   same release.
+4. Copy it into Millennium's plugin folder, usually
+   `C:\Program Files (x86)\Steam\millennium\plugins`.
+5. Start Steam and enable **Steam Accessibility** under Millennium settings, Plugins. You can
+   also add `"steam-accessibility"` to `plugins.enabledPlugins` in
+   `Steam\millennium\config\config.json` while Steam is closed.
+
+To update, close Steam and replace the file with the new one. To uninstall, close Steam and
+delete it.
+
+### Building from source
 
 1. Install [Bun](https://bun.sh).
 2. Close Steam.
 3. In this folder, run `bun install`, then `bun run build`. The build is placed directly into
-   Millennium's plugin folder.
-4. Start Steam and enable **Steam Accessibility** under Millennium settings, Plugins. You can
-   also add `"steam-accessibility"` to `plugins.enabledPlugins` in
-   `Steam\millennium\config\config.json` while Steam is closed.
+   Millennium's plugin folder, replacing any installed release.
+4. Enable the plugin as in step 5 above.
+
+To build somewhere else without touching Steam, run
+`./node_modules/.bin/starlight pack --release -o dist`.
+
+### Making a release
+
+1. Set `version` in `millennium.toml`, for example `0.2.0`, and commit it.
+2. Tag the commit with the same version and push the tag:
+   `git tag v0.2.0` and `git push origin v0.2.0`.
+
+GitHub Actions then builds the plugin and publishes a release with `steam-accessibility.star`
+and its checksum attached (see `.github/workflows/release.yml`). The build fails if the tag
+does not match the version in `millennium.toml`.
 
 ## Keyboard
 

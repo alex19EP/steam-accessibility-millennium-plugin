@@ -1,0 +1,49 @@
+# Builds steam-accessibility.star and publishes it as a GitHub release when a version tag
+# (v0.1.0, ...) is pushed. The tag must match `version` in millennium.toml.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Windows, the platform the plugin targets and is developed on.
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Check that the tag matches the plugin version
+        run: |
+          version=$(sed -n 's/^version *= *"\(.*\)"/\1/p' millennium.toml)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version in millennium.toml"
+            exit 1
+          fi
+
+      # --ignore-scripts skips `prepare` (starlight lsp), which only sets up editor types.
+      - run: bun install --frozen-lockfile --ignore-scripts
+
+      # -o builds into dist/ instead of the local Steam plugin folder.
+      - name: Build
+        run: |
+          ./node_modules/.bin/starlight pack --release -o dist
+          ./node_modules/.bin/starlight verify dist/steam-accessibility.star
+          cd dist && sha256sum steam-accessibility.star > steam-accessibility.star.sha256
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/steam-accessibility.star dist/steam-accessibility.star.sha256 \
+            --title "Steam Accessibility $GITHUB_REF_NAME" \
+            --generate-notes
