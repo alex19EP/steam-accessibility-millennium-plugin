@@ -9,7 +9,8 @@ import {
 	refreshDisabled,
 	updateCollapsed,
 } from './a11y';
-import { addMenuButtons } from './navmenus';
+import { fixNavTabs, updateCurrentTab } from './navmenus';
+import { findToastWindow, watchToasts } from './toasts';
 
 // Steam's shell exposes these globals in the SharedJSContext the frontend runs in.
 const w = window as any;
@@ -70,11 +71,12 @@ function onKeyDown(e: KeyboardEvent) {
 function repair(name: string, doc: Document) {
 	const role = name.startsWith('contextmenu') ? 'menuitem' : 'button';
 	for (const c of findCandidates(doc)) applyFix(c, role);
-	addMenuButtons(doc);
+	fixNavTabs(doc);
 	nameUnlabeledControls(doc);
 	hideDecorativeImages(doc);
 	hideCollapsed(doc);
 	refreshDisabled(doc);
+	findToastWindow(doc);
 }
 
 function attachPopup(popup: any) {
@@ -84,6 +86,7 @@ function attachPopup(popup: any) {
 	const name = popupName(popup);
 	const doc = win.document;
 	installActivation(doc);
+	watchToasts(doc);
 
 	let pending = 0;
 	const schedule = () => {
@@ -94,10 +97,15 @@ function attachPopup(popup: any) {
 		}, 250);
 	};
 	new MutationObserver(schedule).observe(doc, { childList: true, subtree: true });
-	// Panels open and collapse by changing only their inline style; handle that right away.
+	// Panels open and collapse by changing only their inline style, and the active tab only
+	// changes its class; handle both right away.
 	new MutationObserver((records) => {
-		for (const r of records) updateCollapsed(r.target as HTMLElement);
-	}).observe(doc, { attributes: true, attributeFilter: ['style'], subtree: true });
+		for (const r of records) {
+			const el = r.target as HTMLElement;
+			if (r.attributeName === 'style') updateCollapsed(el);
+			else updateCurrentTab(el);
+		}
+	}).observe(doc, { attributes: true, attributeFilter: ['style', 'class'], subtree: true });
 	schedule();
 }
 

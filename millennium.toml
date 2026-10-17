@@ -5,6 +5,10 @@ version = "0.1.0"
 author = "alex19EP"
 description = "Screen reader fixes for the Steam desktop client: F6 moves focus between the Steam window and the web page, and the window's menus and tabs get proper roles and names."
 
+[assets]
+# prism.dll (speech output) and its licenses; backend/speech.lua writes the DLL to disk.
+resources = ["resources/**/*"]
+
 [backend]
 entry = "backend/main.lua"
 sources = ["backend/**/*.lua"]

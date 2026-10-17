@@ -10,9 +10,16 @@ User-facing docs live in README.md.
   F6 handling, auto-focus of the page on route change.
 - `frontend/a11y.ts`: the generic repair: finds clickable elements via React props, gives
   them role/tabindex/name, keyboard and screen reader activation.
-- `frontend/navmenus.ts`: a visually hidden "Меню: <tab>" button after each Store/Library/
-  Community/Profile tab that opens Steam's hover-only dropdown and focuses it (APG disclosure
-  navigation pattern: the tab itself still navigates).
+- `frontend/navmenus.ts`: the Store/Library/Community/Profile tabs: `aria-current="page"` on
+  the active one, and a visually hidden "Меню: <tab>" button after each that opens Steam's
+  hover-only dropdown and focuses it (APG disclosure navigation pattern: the tab itself
+  still navigates).
+- `frontend/toasts.ts`: speaks notification toasts through `backend.speak`.
+- `backend/speech.lua`: speech/braille through Prism (`resources/prism/prism.dll`, v0.18.3
+  x64 from the official GitHub release, MPL-2.0; licenses next to it). Written to
+  `%LOCALAPPDATA%\steam-accessibility\prism-<version>.dll` on first use and loaded via
+  `LoadLibraryW`. To update Prism: replace the DLL and licenses, bump `PRISM_VERSION`, and
+  diff `prism.h` against the `ffi.cdef` (PrismConfig and PrismError change between versions).
 - `webview/preload.ts`: injected into Store/Community pages; F6 there calls
   `frontend.focusShell()`.
 - `backend/focus.lua`: native Win32 focus via LuaJIT `ffi` (Windows only).
@@ -53,6 +60,18 @@ User-facing docs live in README.md.
   sits in a `useRef` hook (has `Show`, `Hide`, `TakeFocus`, `BHasFocus`, `visible`).
   `bSuperNavBehavior` (the tabs) means hover-only and `bNoFocusWhenShown`; calling
   `TakeFocus()` afterwards moves focus into the menu like the menu bar's menus.
+- Active tab: route under the tab component's `rootRoute` prop and, for the `/browser` tabs,
+  `MainWindowBrowserManager.GetLastActiveTab()` equal to the parent's `tab` prop
+  ('store', 'community', 'me'). Steam only toggles a hashed class.
+- Notifications: `window.NotificationStore` (toast queue, settings `disable_all_toasts`,
+  `disable_toasts_in_game`). Each toast renders as `<div role="alert">` whose component props
+  hold `notification.notificationID`. Desktop toasts live in a non-focusable browser view
+  window named `notificationtoasts...` opened by plain `window.open` (not in
+  `g_PopupManager`); found through the hook holding the view object (`GetViewWindow()`).
+- Plugin assets: `[assets] resources = [...]` in millennium.toml (only picked up when the
+  config file is named `millennium.toml`), read in Lua with `millennium.assets.read(path)`.
+  `starlight pack -o <dir>` builds elsewhere without touching Steam; `starlight inspect
+  <file>` lists a .star's contents.
 - Some panels are hidden by collapsing to inline `height: 0; overflow: hidden` rather than
   unmounting; `hideCollapsed` makes them inert.
 - Steam's own UI code is readable (minified) in `C:\Program Files (x86)\Steam\steamui\*.js`
@@ -91,8 +110,7 @@ User-facing docs live in README.md.
 ## Open work
 
 - Unnamed: some Library sidebar icons, 41x41 buttons on game tiles.
-- Tabs (Store/Library/Community/Profile) should expose which one is active
-  (`aria-current="page"`).
+- Untested so far: toast speech (desktop, in game, with "disable toasts in game").
 - Announce status changes (downloads, update notices) via live regions.
 - Not yet examined: library game list, game page (Play button and its menus), context menu
   arrow-key navigation, Friends window, Settings window.

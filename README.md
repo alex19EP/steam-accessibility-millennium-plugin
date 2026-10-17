@@ -33,6 +33,12 @@ and icon-only buttons are silent.
   Community and Profile menus (Wishlist, Downloads, Market, Activity, ...) by hovering over
   the tab. After each tab there is now a "Menu: <tab>" button that opens the same menu and
   moves focus into it. The tab itself still goes to its section.
+- **Announces the active tab**: the Store, Library, Community or Profile tab you are in is
+  reported as the current page.
+- **Speaks Steam's notifications**: friend messages, downloads finishing and other toasts
+  pop up in a separate window that screen readers never read. The plugin sends their text
+  to your screen reader (or, without one, to a Windows voice) using
+  [Prism](https://github.com/ethindp/prism).
 - **Hides collapsed notices**: panels Steam has closed, such as the client update bar in
   the Library, are no longer read in browse mode or reached with Tab.
 - **Names icon-only buttons** from the tooltip text Steam shows sighted users, in Steam's
@@ -89,8 +95,9 @@ From source:
 ## Known limitations
 
 - A few icon buttons in the Library are still unnamed.
-- Which of the Store / Library / Community / Profile tabs is active is not announced yet.
 - Status messages such as download progress are not announced when they change.
+- Notifications you turned off in Steam's settings (all of them, or while in game) are not
+  spoken either.
 
 Bug reports from screen reader users are very welcome. Please mention your screen reader and
 Steam's interface language.
@@ -103,3 +110,8 @@ is a screen reader user. The author tested every change in Steam with NVDA.
 ## License
 
 [MIT](LICENSE)
+
+The plugin bundles `prism.dll` from [Prism](https://github.com/ethindp/prism) v0.18.3
+(MPL-2.0), which includes the NVDA controller client (LGPL-2.1) and other libraries. Their
+licenses are in [resources/prism/LICENSES](resources/prism/LICENSES). On first use the DLL is
+copied to `%LOCALAPPDATA%\steam-accessibility\`.
