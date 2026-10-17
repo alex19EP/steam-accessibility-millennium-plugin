@@ -32,9 +32,11 @@ jobs:
       # --ignore-scripts skips `prepare` (starlight lsp), which only sets up editor types.
       - run: bun install --frozen-lockfile --ignore-scripts
 
-      # -o builds into dist/ instead of the local Steam plugin folder.
+      # -o builds into dist/ instead of the local Steam plugin folder. starlight does not
+      # create the folder itself.
       - name: Build
         run: |
+          mkdir -p dist
           ./node_modules/.bin/starlight pack --release -o dist
           ./node_modules/.bin/starlight verify dist/steam-accessibility.star
           cd dist && sha256sum steam-accessibility.star > steam-accessibility.star.sha256
