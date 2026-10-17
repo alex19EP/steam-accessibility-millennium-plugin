@@ -64,10 +64,11 @@ User-facing docs live in README.md.
   `MainWindowBrowserManager.GetLastActiveTab()` equal to the parent's `tab` prop
   ('store', 'community', 'me'). Steam only toggles a hashed class.
 - Notifications: `window.NotificationStore` (toast queue, settings `disable_all_toasts`,
-  `disable_toasts_in_game`). Each toast renders as `<div role="alert">` whose component props
-  hold `notification.notificationID`. Desktop toasts live in a non-focusable browser view
-  window named `notificationtoasts...` opened by plain `window.open` (not in
-  `g_PopupManager`); found through the hook holding the view object (`GetViewWindow()`).
+  `disable_toasts_in_game`). The toast component's props hold
+  `notification.notificationID`. In Big Picture each toast is a `<div role="alert">`; on the
+  desktop every toast opens its own non-focusable popup `notificationtoasts_<id>_desktop`
+  (in `g_PopupManager`) without an alert role. Test toasts: `NotificationStore.
+  TestFriendMessage(null, text)`, `TestDownloadComplete(appid)`, `TestFriendIngame(name)`.
 - Plugin assets: `[assets] resources = [...]` in millennium.toml (only picked up when the
   config file is named `millennium.toml`), read in Lua with `millennium.assets.read(path)`.
   `starlight pack -o <dir>` builds elsewhere without touching Steam; `starlight inspect
@@ -90,10 +91,18 @@ User-facing docs live in README.md.
   2. `& 'C:\Program Files (x86)\Steam\Steam.exe' -shutdown` and wait for `steam` to exit.
   3. `bun run build`.
   4. Start Steam with `Start-Process explorer.exe '"C:\Program Files (x86)\Steam\steam.exe"'`
-     so it gets the normal user environment, not the shell's.
+     so it gets the normal user environment, not the shell's. Explorer drops arguments; to
+     pass `-cef-enable-debugging`, make a `.lnk` with the argument (WScript.Shell
+     `CreateShortcut`, in the scratchpad) and open that through explorer.
 - Never send synthetic keys unless Steam is the foreground window.
-- Frontend `console.log` output is not visible live. Check results through the
-  accessibility tree instead.
+- Frontend `console.log` output is not visible live, not even through DevTools (Millennium
+  routes plugin consoles elsewhere). Check results through the accessibility tree instead.
+- With `-cef-enable-debugging` (ask first; any local program can then control Steam), the
+  DevTools port 127.0.0.1:8080 lists every Steam window; `Runtime.evaluate` on the
+  `SharedJSContext` target runs code in Steam's UI. `Millennium.callServerMethod(
+  'steam-accessibility', 'speak', { text })` calls a backend export directly, and
+  `MILLENNIUM_PRIVATE_INTERNAL_FOREIGN_FUNCTION_INTERFACE_DO_NOT_USE.nextId` counts backend
+  calls.
 
 ## Verifying changes
 
@@ -103,6 +112,8 @@ User-facing docs live in README.md.
 - `.\tools\msaa-dump.ps1 -Target shell -DoDefault 'МАГАЗИН'`: activate an element the way
   NVDA's Enter does in browse mode.
 - `.\tools\steam-windows.ps1`: which browser has Win32 focus (for F6 / auto-focus).
+- `.\tools\test-toast.ps1 [-Text ...] [-Kind Download -AppId 570]`: make Steam show a test
+  toast (needs the DevTools port above).
 - To learn what an unnamed control carries, temporarily set
   `aria-description` to its fiber prop keys (walk `__reactFiber$*` `.return` chain and list
   `memoizedProps` keys), rebuild, and read `desc=` in the dump. Remove before committing.
@@ -110,7 +121,7 @@ User-facing docs live in README.md.
 ## Open work
 
 - Unnamed: some Library sidebar icons, 41x41 buttons on game tiles.
-- Untested so far: toast speech (desktop, in game, with "disable toasts in game").
+- Untested so far: toast speech in game (and with "disable toasts in game").
 - Announce status changes (downloads, update notices) via live regions.
 - Not yet examined: library game list, game page (Play button and its menus), context menu
   arrow-key navigation, Friends window, Settings window.

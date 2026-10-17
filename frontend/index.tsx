@@ -10,7 +10,7 @@ import {
 	updateCollapsed,
 } from './a11y';
 import { fixNavTabs, updateCurrentTab } from './navmenus';
-import { findToastWindow, watchToasts } from './toasts';
+import { watchToasts } from './toasts';
 
 // Steam's shell exposes these globals in the SharedJSContext the frontend runs in.
 const w = window as any;
@@ -76,7 +76,6 @@ function repair(name: string, doc: Document) {
 	hideDecorativeImages(doc);
 	hideCollapsed(doc);
 	refreshDisabled(doc);
-	findToastWindow(doc);
 }
 
 function attachPopup(popup: any) {
@@ -86,7 +85,7 @@ function attachPopup(popup: any) {
 	const name = popupName(popup);
 	const doc = win.document;
 	installActivation(doc);
-	watchToasts(doc);
+	watchToasts(doc, name);
 
 	let pending = 0;
 	const schedule = () => {
